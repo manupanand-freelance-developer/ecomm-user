@@ -8,12 +8,12 @@ if [ -z "${MONGO}"]; then
 fi
 
 
-if [ -z "${MONGO_URL}"]; then
+if [ -z "${MONGO_URL}" ]; then
     echo Input MONGO_URL is missing
     exit 1
 fi
 
-if [ -z "${REDIS_URL}"]; then
+if [ -z "${REDIS_URL}" ]; then
     echo Input REDIS_URL is missing
     exit 1
 fi
