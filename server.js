@@ -8,6 +8,7 @@ const bodyParser = require('body-parser');
 const express = require('express');
 const pino = require('pino');
 const expPino = require('express-pino-logger');
+require('dotenv').config();
 
 // MongoDB
 let db;
@@ -221,18 +222,33 @@ app.get('/history/:id', async (req, res) => {
 const redisClient = createClient({
     url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
+const port = process.env.USER_SERVER_PORT || '8080';
+console.log(process.env.REDIS_URL)
 
-redisClient.on('error', (e) => {
-    logger.error('Redis ERROR', e);
-});
-redisClient.on('connect', () => {
-    logger.info('Redis connected');
-});
-redisClient.connect();
+async function startServer() {
+    try {
+                    
+        await mongoConnect();
+        await redisConnect();
+        // -----------------------
+        // Start Server
+        // -----------------------
+
+        app.listen(port, () => {
+            logger.info(`Started on port ${port}`);
+        });
+    } catch (err) {
+        logger.error('Failed to connect to Redis:', err);
+        process.exit(1); // Exit if Redis is not connected
+    }
+}
+
+
 
 // set up Mongo
 async function mongoConnect() {
     try {
+        logger.info(`Attempting to connect to MongoDB at ${process.env.MONGO_URL}`);
         const mongoURL = process.env.MONGO_URL || 'mongodb://localhost:27017/users';
         const client = await MongoClient.connect(mongoURL, { useNewUrlParser: true, useUnifiedTopology: true });
         db = client.db('users');
@@ -242,22 +258,43 @@ async function mongoConnect() {
         logger.info('MongoDB connected');
     } catch (error) {
         mongoConnected = false;
-        logger.error('ERROR', error);
+       // 🔥 Print error message and stack explicitly
+        logger.error(`❌ MongoDB connection error: ${error.message}`);
+        logger.debug(error.stack);
         setTimeout(mongoLoop, 2000);
     }
 }
+async function redisConnect() {
+    try {
+        logger.info(`🔄 Attempting Redis connection to ${REDIS_URL}`);
+        await redisClient.connect();
+        logger.info(`✅ Redis connected at ${REDIS_URL}`);
+        redisConnected = true;
+        //startServer(); // Only start the app after Redis is ready
+    } catch (err) {
+        
+        logger.error(`❌ Redis connection failed :${err.message}`);
 
+     
+        setTimeout(redisLoop, 2000); // Retry after 2 seconds
+    }
+}
 function mongoLoop() {
-    mongoConnect().catch((e) => {
-        logger.error('ERROR', e);
+    mongoConnect().catch((error) => {
+        logger.error(`Unhandled error in mongoLoop: ${error.message}`);
+        logger.debug(error.stack);
         setTimeout(mongoLoop, 2000);
     });
 }
+function redisLoop(){
+    redisConnect().catch((err) => {
+        logger.error(`Unhandled Redis error: ${err.message}`);
+        logger.debug(err.stack);
+        setTimeout(redisLoop, 2000);
+    });
+}
 
-mongoLoop();
 
 // fire it up!
-const port = process.env.USER_SERVER_PORT || '8080';
-app.listen(port, () => {
-    logger.info('Started on port', port);
-});
+startServer();
+
