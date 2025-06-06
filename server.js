@@ -266,9 +266,9 @@ async function mongoConnect() {
 }
 async function redisConnect() {
     try {
-        logger.info(`🔄 Attempting Redis connection to ${REDIS_URL}`);
+        logger.info(`🔄 Attempting Redis connection to ${process.env.REDIS_URL}`);
         await redisClient.connect();
-        logger.info(`✅ Redis connected at ${REDIS_URL}`);
+        logger.info(`✅ Redis connected at ${process.env.REDIS_URL}`);
         redisConnected = true;
         //startServer(); // Only start the app after Redis is ready
     } catch (err) {
