@@ -16,6 +16,9 @@ let usersCollection;
 let ordersCollection;
 let mongoConnected = false;
 
+//variables
+const port = process.env.USER_SERVER_PORT || '8080';
+
 const logger = pino({
     level: 'info',
     prettyPrint: false,
@@ -222,8 +225,8 @@ app.get('/history/:id', async (req, res) => {
 const redisClient = createClient({
     url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
-const port = process.env.USER_SERVER_PORT || '8080';
-console.log(process.env.REDIS_URL)
+
+// console.log(process.env.REDIS_URL)
 
 async function startServer() {
     try {
